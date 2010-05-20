@@ -45,7 +45,7 @@ class TrainerHandler(tornado.web.RequestHandler):
     def on_response(self, url, response):
         if response.error: raise tornado.web.HTTPError(500)
         spam = SpambayesScorer()
-        spam.train(response.body, bool(self.get_argument('isTroll')))
+        spam.train(re.sub(r'<[^>]*?>', '', response.body), self.get_argument('isTroll'))
         self.write('merci')
         self.finish()
         
