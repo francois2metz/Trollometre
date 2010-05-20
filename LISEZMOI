@@ -14,21 +14,7 @@ et/ou dans le titre de la fenêtre.
 
 Pour installer le trollomètre chez vous, vous aurez besoin des paquets debian
 suivants :
-  # aptitude install python-lxml python-dev python-pycurl python-simplejson
-
-Ensuite, il vous faudra installer tornado :
-  $ git clone git://github.com/facebook/tornado
-  $ cd tornado
-  $ python setup.py build
-  # python setup.py install
-
-Ainsi que python-daemon :
-  # aptitude install setuptools
-  $ wget 'http://pypi.python.org/packages/source/p/python-daemon/python-daemon-1.5.1.tar.gz#md5=46abde3f848aaaed0df3b1fe938234f0'
-  $ tar xvzf python-daemon-1.5.1.tar.gz
-  $ cd python-daemon-1.5.1/
-  $ python setup.py build
-  # python setup.py install
+  # aptitude install python-tornado python-daemon
 
 Vous pourrez alors lancer le trollomètre :
   $ ./trollometre 8000

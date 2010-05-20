@@ -11,9 +11,8 @@ The score should appear as a bar on the top of the page green is good. Red is ba
 
 == Install ==
 
-To install the Trollometer you'll need the following debian packages
-
-  # aptitude install python-lxml python-dev python-pycurl python-simplejson
+Debian:
+  # aptitude install python-tornado python-daemon
 
 OS X:
   # easy_install setuptools pycurl==7.16.2.1 simplejson
