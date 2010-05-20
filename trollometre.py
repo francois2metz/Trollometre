@@ -13,12 +13,16 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 
+from spambayes.storage import open_storage
+from spambayes import tokenizer
+
 
 class Application(tornado.web.Application):
     def __init__(self, debug):
         handlers = [
             (r"/", MainHandler),
-            (r"/measure", MeasureHandler)
+            (r"/measure", MeasureHandler),
+            (r"/train", TrainerHandler)
         ]
         settings = dict(
             debug=debug,
@@ -27,14 +31,49 @@ class Application(tornado.web.Application):
         )
         tornado.web.Application.__init__(self, handlers, **settings)
 
-
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("index.html")
 
+class TrainerHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def post(self):
+        url = self.get_argument("url")
+        http = tornado.httpclient.AsyncHTTPClient()
+        http.fetch(url, callback=self.async_callback(self.on_response, url))
+
+    def on_response(self, url, response):
+        if response.error: raise tornado.web.HTTPError(500)
+        spam = SpambayesScorer()
+        spam.train(response.body, bool(self.get_argument('isTroll')))
+        self.write('merci')
+        self.finish()
+        
+class WordsScorer:
+    words = frozenset([w.strip() for w in open("liste.txt")])
+    def compute(self, txt):
+        for punct in string.punctuation:
+            txt = txt.replace(punct," ")
+        txt = txt.split()
+        count = len(filter(lambda x: x in self.words, txt))
+        return count / math.log10(2 + len(txt))
+
+class SpambayesScorer:
+    bayes = open_storage('__hammer.db')
+    def compute(self, txt):
+        tokens = tokenizer.tokenize(txt)
+        print self.bayes.nspam, self.bayes.nham
+        return self.bayes.spamprob(tokens)
+
+    def train(self, txt, isTroll):
+        if isTroll == 'yes':
+            self.bayes.learn(tokenizer.tokenize(txt), True)
+        else:
+            self.bayes.learn(tokenizer.tokenize(txt), False)
+        self.bayes.store()
+
 
 class Page(object):
-    words = frozenset([w.strip() for w in open("liste.txt")])
     divstyle = 'position: fixed; top: 0px; left: 0px; width: 100%; height: 10px; line-height: 8px; font-size: 8px; background-color: #08ac56;z-index: 1000;'
     divmetrestyle  = 'width: %.1f%%; height: 10px; padding: 0 2px; background-color: #ff180b;'
     divmetretext   = u'Trollomètre'
@@ -49,18 +88,18 @@ class Page(object):
 
     def absolute_links(self, url):
         self.doc.make_links_absolute(url)
-        base = lxml.html.Element('base', dict(href=url))
-        self.doc.head.append(base)
+        #base = lxml.html.Element('base', dict(href=url))
+        #self.doc.head.append(base)
 
-    def compute_score(self):
+    def compute_score(self, filterName):
         txt = self.doc.text_content()
-        for punct in string.punctuation:
-            txt = txt.replace(punct," ")
-        txt = txt.split()
-        count = len(filter(lambda x: x in self.words, txt))
-        return count / math.log10(2 + len(txt))
+        if filterName == 'bayes':
+            scorer = SpambayesScorer()
+        else:
+            scorer = WordsScorer()
+        return scorer.compute(txt)
 
-    def inject_score(self, score):
+    def inject_score(self, score, url):
         title = self.doc.head.find('title')
         txt = '(%.1f) ' % score
         if score > 10.0:
@@ -86,6 +125,32 @@ class Page(object):
         div.append(divreturn)
         self.doc.body.append(div)
 
+        form = lxml.html.Element('form')
+        form.attrib['method'] = 'post'
+        form.attrib['action'] = '/train'
+        select = lxml.html.Element('select')
+        select.attrib['name'] = 'isTroll'
+        opt1 = lxml.html.Element('option')
+        opt1.attrib['value'] = 'yes'
+        opt1.text = 'yes'
+        select.append(opt1)
+        opt2 = lxml.html.Element('option')
+        opt2.attrib['value'] = 'no'
+        opt2.text = 'no'
+        select.append(opt2)
+        form.append(select)
+        submit = lxml.html.Element('input')
+        submit.attrib['type'] = 'submit'
+        submit.attrib['value'] = 'Save'
+        form.append(submit)
+        iurl = lxml.html.Element('input')
+        iurl.attrib['type'] = 'hidden'
+        iurl.attrib['name'] = 'url'
+        iurl.attrib['value'] = url
+        
+        form.append(iurl)
+        self.doc.body.append(form)
+
     def tostring(self):
         return lxml.html.tostring(self.doc)
 
@@ -108,8 +173,8 @@ class MeasureHandler(tornado.web.RequestHandler):
         if response.error: raise tornado.web.HTTPError(500)
         page = Page(response.body)
         page.absolute_links(url)
-        score = page.compute_score()
-        page.inject_score(score)
+        score = page.compute_score(self.get_argument("filter"))
+        page.inject_score(score, url)
         self.write(page.tostring())
         self.finish()
 

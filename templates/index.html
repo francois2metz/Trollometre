@@ -16,6 +16,10 @@
 			<form action="/measure" method="get">
 				<label for="url">Veuillez entrer l'URL de la page web que vous souhaitez mesurer avec le trollomètre :</label>
 				<input type="url" id="url" name="url" placeholder="http://" required="required" autofocus="autofocus" />
+                                <select name="filter">
+                                    <option value="classic">Classique</option>
+                                    <option value="bayes">Bayésien</option>
+                                </select>
 				<button type="submit">Go</button>
 			</form>
 			<p>Le score s'affiche dans le titre de la page (dans la barre d'onglets et/ou dans le titre de la fenêtre).</p>
