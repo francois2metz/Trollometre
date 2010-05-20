@@ -35,7 +35,7 @@ class MainHandler(tornado.web.RequestHandler):
 
 class Page(object):
     words = frozenset([w.strip() for w in open("liste.txt")])
-    divstyle = 'position: fixed; top: 0px; left: 0px; width: 100%; height: 10px; line-height: 8px; font-size: 8px; background-color: #08ac56;'
+    divstyle = 'position: fixed; top: 0px; left: 0px; width: 100%; height: 10px; line-height: 8px; font-size: 8px; background-color: #08ac56;z-index: 1000;'
     divmetrestyle  = 'width: %.1f%%; height: 10px; padding: 0 2px; background-color: #ff180b;'
     divmetretext   = u'Trollomètre'
     divreturnstyle = 'position: fixed; top: 0px; right: 0px; height: 10px; padding: 0 2px; color: white; background-color: #3c657b;'
