@@ -128,6 +128,6 @@ if __name__ == "__main__":
         )
         ctx.open()
     http_server = tornado.httpserver.HTTPServer(Application(debug))
-    http_server.listen(port, '127.0.0.1')
+    http_server.listen(port)
     tornado.ioloop.IOLoop.instance().start()
 
